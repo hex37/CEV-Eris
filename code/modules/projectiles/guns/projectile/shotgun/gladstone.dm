@@ -10,14 +10,14 @@
 	proj_step_multiplier = 0.8 // faster than non-shotgun bullets, slower than non-shotgun bullets with an accelerator
 	ammo_type = /obj/item/ammo_casing/shotgun
 	matter = list(MATERIAL_PLASTEEL = 20, MATERIAL_PLASTIC = 6)
-	recoil_buildup = 10
-	one_hand_penalty = 15 //full sized shotgun level
+	init_recoil = RIFLE_RECOIL(2.3)
 	damage_multiplier = 0.8
 	saw_off = FALSE
 
 	price_tag = 1800
 	spawn_tags = SPANW_TAG_FS_SHOTGUN
 	gun_parts = list(/obj/item/part/gun/frame/gladstone = 1, /obj/item/part/gun/grip/rubber = 1, /obj/item/part/gun/mechanism/shotgun = 1, /obj/item/part/gun/barrel/shotgun = 1)
+	serial_type = "FS"
 
 /obj/item/part/gun/frame/gladstone
 	name = "Gladstone frame"

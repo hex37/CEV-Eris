@@ -99,11 +99,14 @@
 				else
 					edge_eligible = 1
 
-			if(edge_eligible && (brute + prev_brute) >= max_damage * DROPLIMB_THRESHOLD_EDGE && prob(brute))
-				droplimb(0, DROPLIMB_EDGE)
+			if(edge_eligible)
+				if((brute + prev_brute) >= max_damage * DROPLIMB_THRESHOLD_EDGE && prob(brute))
+					droplimb(0, DROPLIMB_EDGE)
+				if((burn + prev_burn) >= max_damage * DROPLIMB_THRESHOLD_EDGE && prob(burn))
+					droplimb(TRUE, DROPLIMB_EDGE_BURN)
 			else if((burn + prev_burn) >= max_damage * DROPLIMB_THRESHOLD_DESTROY && prob(burn/3))
 				droplimb(0, DROPLIMB_BURN)
-			else if((brute + prev_brute) >= max_damage * DROPLIMB_THRESHOLD_DESTROY && prob(brute/2))
+			else if((brute + prev_brute) >= max_damage * DROPLIMB_THRESHOLD_DESTROY && prob(brute/3))
 				droplimb(0, DROPLIMB_BLUNT)
 			else if((brute + prev_brute) >= max_damage * DROPLIMB_THRESHOLD_TEAROFF && prob(brute/5))
 				droplimb(0, DROPLIMB_EDGE)

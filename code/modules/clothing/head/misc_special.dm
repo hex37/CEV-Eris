@@ -22,9 +22,9 @@
 	matter = list(MATERIAL_STEEL = 4, MATERIAL_GLASS = 2)
 	var/up = 0
 	armor = list(
-		melee = 20,
-		bullet = 10,
-		energy = 10,
+		melee = 5,
+		bullet = 2,
+		energy = 2,
 		bomb = 0,
 		bio = 0,
 		rad = 0
@@ -36,7 +36,6 @@
 	w_class = ITEM_SIZE_NORMAL
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_MODERATE
-	obscuration = HEAVY_OBSCURATION
 	style = STYLE_NEG_LOW
 	style_coverage = COVERS_WHOLE_FACE
 	var/base_state
@@ -59,7 +58,6 @@
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
-			obscuration = initial(obscuration)
 			icon_state = base_state
 			to_chat(usr, "You flip the [src] down to protect your eyes.")
 			style_coverage = COVERS_WHOLE_FACE
@@ -68,7 +66,6 @@
 			body_parts_covered &= ~(EYES|FACE)
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
-			obscuration = 0
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]up"
 			to_chat(usr, "You push the [src] up out of your face.")

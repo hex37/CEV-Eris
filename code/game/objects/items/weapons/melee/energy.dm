@@ -2,7 +2,7 @@
 	icon = 'icons/obj/weapons.dmi'
 	sharp = FALSE
 	edge = FALSE
-	armor_penetration = ARMOR_PEN_HALF
+	armor_divisor = ARMOR_PEN_MASSIVE
 	flags = NOBLOODY
 	structure_damage_factor = STRUCTURE_DAMAGE_BREACHING
 	heat = 3800
@@ -24,6 +24,7 @@
 	active = 1
 	force = active_force
 	throwforce = active_throwforce
+	damtype = BURN
 	sharp = TRUE
 	edge = TRUE
 	w_class = active_w_class
@@ -38,6 +39,7 @@
 	active = 0
 	force = initial(force)
 	throwforce = initial(throwforce)
+	damtype = initial(damtype)
 	sharp = initial(sharp)
 	edge = initial(edge)
 	w_class = initial(w_class)
@@ -95,6 +97,7 @@
 	icon_state = "sword0"
 	active_force = WEAPON_FORCE_LETHAL // Go forth and slay, padawan
 	active_throwforce = WEAPON_FORCE_LETHAL
+	no_double_tact = TRUE
 	active_w_class = ITEM_SIZE_BULKY
 	force = WEAPON_FORCE_HARMLESS
 	throwforce = WEAPON_FORCE_HARMLESS
@@ -185,14 +188,15 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "blade"
 	force = WEAPON_FORCE_ROBUST //Normal attacks deal very high damage - about the same as wielded fire axe
-	armor_penetration = 100
+	armor_divisor = ARMOR_PEN_MAX
+	damtype = BURN
 	sharp = TRUE
 	edge = TRUE
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
 	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
 	throw_range = 1
-	w_class = ITEM_SIZE_BULKY//So you can't hide it in your pocket or some such.
+	w_class = ITEM_SIZE_BULKY
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/mob/living/creator

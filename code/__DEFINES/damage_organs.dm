@@ -130,6 +130,7 @@
 #define DROPLIMB_EDGE 0
 #define DROPLIMB_BLUNT 1
 #define DROPLIMB_BURN 2
+#define DROPLIMB_EDGE_BURN 3
 
 #define MODIFICATION_ORGANIC 0	// Organic
 #define MODIFICATION_ASSISTED 1 // Like pacemakers, not robotic
@@ -149,3 +150,9 @@
 #define INFECTION_LEVEL_THREE 1000
 
 #define ORGAN_RECOVERY_THRESHOLD (5 MINUTES)
+
+// Organ generation
+#define ORGAN_HAS_BONES			(1<<0)
+#define ORGAN_HAS_BLOOD_VESSELS	(1<<1)
+#define ORGAN_HAS_NERVES		(1<<2)
+#define ORGAN_HAS_MUSCLES		(1<<3)

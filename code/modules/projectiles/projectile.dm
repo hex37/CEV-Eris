@@ -54,6 +54,7 @@
 	var/spreading_step = 15
 	var/projectile_accuracy = 1 // Based on vigilance, reduces random limb chance and likelihood of missing intended target
 	var/recoil = 0
+	var/wounding_mult = 1 // A multiplier on damage inflicted to and damage blocked by mobs
 
 	//Effects
 	var/stun = 0
@@ -63,7 +64,6 @@
 	var/stutter = 0
 	var/eyeblur = 0
 	var/drowsy = 0
-	var/agony = 0
 	var/embed = 0 // whether or not the projectile can embed itself in the mob
 	var/knockback = 0
 
@@ -91,6 +91,12 @@
 	var/matrix/effect_transform			// matrix to rotate and scale projectile effects - putting it here so it doesn't
 										//  have to be recreated multiple times
 
+/obj/item/projectile/Destroy()
+	firer = null
+	original = null
+	starting = null
+	LAZYCLEARLIST(permutated)
+	return ..()
 
 /obj/item/projectile/is_hot()
 	if (damage_types[BURN])
@@ -110,10 +116,10 @@
 
 /obj/item/projectile/multiply_projectile_damage(newmult)
 	for(var/i in damage_types)
-		damage_types[i] *= newmult
+		damage_types[i] *= i == HALLOSS ? 1 : newmult
 
-/obj/item/projectile/multiply_projectile_penetration(newmult)
-	armor_penetration = initial(armor_penetration) * newmult
+/obj/item/projectile/add_projectile_penetration(newmult)
+	armor_divisor = initial(armor_divisor) + newmult
 
 /obj/item/projectile/multiply_pierce_penetration(newmult)
 	penetrating = initial(penetrating) + newmult
@@ -125,12 +131,10 @@
 	if(!hitscan)
 		step_delay = initial(step_delay) * newmult
 
-/obj/item/projectile/multiply_projectile_agony(newmult)
-	agony = initial(agony) * newmult
-
 /obj/item/projectile/proc/multiply_projectile_accuracy(newmult)
 	projectile_accuracy = initial(projectile_accuracy) * newmult
 
+// bullet/pellets redefines this
 /obj/item/projectile/proc/adjust_damages(var/list/newdamages)
 	if(!newdamages.len)
 		return
@@ -284,7 +288,7 @@
 	var/hit_mod = 0
 	switch(target_mob.mob_size)
 		if(120 to INFINITY)
-
+			hit_mod = -6
 		if(80 to 120)
 			hit_mod = -4
 		if(40 to 80)
@@ -311,9 +315,24 @@
 	//roll to-hit
 	miss_modifier = 0
 
-	var/result = PROJECTILE_FORCE_MISS
+	var/result = PROJECTILE_CONTINUE
+
+	if(target_mob != original) // If mob was not clicked on / is not an NPC's target, checks if the mob is concealed by cover
+		var/turf/cover_loc = get_step(get_turf(target_mob), get_dir(get_turf(target_mob), starting))
+		for(var/obj/O in cover_loc)
+			if(istype(O,/obj/structure/low_wall) || istype(O,/obj/machinery/deployable/barrier) || istype(O,/obj/structure/barricade) || istype(O,/obj/structure/table))
+				if(!silenced)
+					visible_message(SPAN_NOTICE("\The [target_mob] ducks behind \the [O], narrowly avoiding \the [src]!"))
+				return FALSE
+		for(var/obj/structure/table/O in get_turf(target_mob))
+			if(istype(O) && O.flipped && (get_dir(get_turf(target_mob), starting) == O.dir))
+				if(!silenced)
+					visible_message(SPAN_NOTICE("\The [target_mob] ducks behind \the [O], narrowly avoiding \the [src]!"))
+				return FALSE
+
 
 	if(iscarbon(target_mob))
+		// Handheld shields
 		var/mob/living/carbon/C = target_mob
 		var/obj/item/shield/S
 		for(S in get_both_hands(C))
@@ -322,20 +341,23 @@
 				qdel(src)
 				return TRUE
 			break //Prevents shield dual-wielding
+
 //		S = C.get_equipped_item(slot_back)
 //		if(S && S.block_bullet(C, src, def_zone))
 //			on_hit(S,def_zone)
 //			qdel(src)
 //			return TRUE
 
-	result = target_mob.bullet_act(src, def_zone)
-
 	if(check_miss_chance(target_mob))
 		result = PROJECTILE_FORCE_MISS
+	else
+		result = target_mob.bullet_act(src, def_zone)
 
 	if(result == PROJECTILE_FORCE_MISS || result == PROJECTILE_FORCE_MISS_SILENCED)
 		if(!silenced && result == PROJECTILE_FORCE_MISS)
 			visible_message(SPAN_NOTICE("\The [src] misses [target_mob] narrowly!"))
+			if(isroach(target_mob))
+				bumped = FALSE // Roaches do not bump when missed, allowing the bullet to attempt to hit the rest of the roaches in a single cluster
 		return FALSE
 
 	//hit messages
@@ -359,10 +381,6 @@
 			target_mob.attack_log += "\[[time_stamp()]\] <b>UNKNOWN SUBJECT (No longer exists)</b> shot <b>[target_mob]/[target_mob.ckey]</b> with <b>\a [src]</b>"
 			msg_admin_attack("UNKNOWN shot [target_mob] ([target_mob.ckey]) with \a [src] (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[target_mob.x];Y=[target_mob.y];Z=[target_mob.z]'>JMP</a>)")
 
-	//sometimes bullet_act() will want the projectile to continue flying
-	if (result == PROJECTILE_CONTINUE)
-		return FALSE
-
 	if(target_mob.mob_classification & CLASSIFICATION_ORGANIC)
 		var/turf/target_loca = get_turf(target_mob)
 		var/mob/living/L = target_mob
@@ -385,7 +403,10 @@
 		if(psy.contractor && result && (H.sanity.level <= 0))
 			psy.holder.reg_break(H)
 
-	return TRUE
+	if(result == PROJECTILE_STOP)
+		return TRUE
+	else
+		return FALSE
 
 /obj/item/projectile/Bump(atom/A as mob|obj|turf|area, forced = FALSE)
 	if(A == src)
@@ -491,7 +512,7 @@
 		pixel_x = location.pixel_x
 		pixel_y = location.pixel_y
 
-		if(!bumped && !isturf(original))
+		if(!bumped && !QDELETED(original) && !isturf(original))
 			if(loc == get_turf(original))
 				if(!(original in permutated))
 					if(Bump(original))
@@ -598,6 +619,31 @@
 			P.pixel_x = location.pixel_x
 			P.pixel_y = location.pixel_y
 			P.activate(P.lifetime)
+
+/obj/item/projectile/proc/block_damage(var/amount, atom/A)
+	amount /= armor_divisor
+	var/dmg_total = 0
+	var/dmg_remaining = 0
+	for(var/dmg_type in damage_types)
+		var/dmg = damage_types[dmg_type]
+		if(!(dmg_type == HALLOSS))
+			dmg_total += dmg
+		if(dmg > 0 && amount > 0)
+			var/dmg_armor_difference = dmg - amount
+			var/is_difference_positive = dmg_armor_difference > 0
+			amount = is_difference_positive ? 0 : -dmg_armor_difference
+			dmg = is_difference_positive ? dmg_armor_difference : 0
+			if(!(dmg_type == HALLOSS))
+				dmg_remaining += dmg
+		if(dmg > 0)
+			damage_types[dmg_type] = dmg
+		else
+			damage_types -= dmg_type
+	if(!damage_types.len)
+		on_impact(A)
+		qdel(src)
+
+	return dmg_total > 0 ? (dmg_remaining / dmg_total) : 0
 
 //"Tracing" projectile
 /obj/item/projectile/test //Used to see if you can hit them.
